@@ -11,19 +11,16 @@
 """
 import re
 import sqlite3
-import sys
 from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
 
+from notify_email import notify_new_lead as send_lead_email
+
 BASE_DIR = Path(__file__).parent
 DB_PATH = BASE_DIR / "leads.db"
 CATALOG_PATH = BASE_DIR / "대동울타리_제품카탈로그.pptx"
-
-CORP_ORG_DIR = BASE_DIR.parent / "corp-org"
-if str(CORP_ORG_DIR) not in sys.path:
-    sys.path.insert(0, str(CORP_ORG_DIR))
 
 st.set_page_config(page_title="대동울타리 — 제품 카탈로그 신청", page_icon="🛡️", layout="centered")
 
@@ -59,16 +56,6 @@ def save_lead(company, contact_name, email, phone, interests, message):
     )
     conn.commit()
     conn.close()
-
-
-def notify_new_lead(company, contact_name, email):
-    """새 신청이 들어오면 카카오톡으로 담당자에게 알린다. 실패해도 신청 자체는 막지 않는다
-    (알림 실패로 잠재고객 신청이 유실되면 안 된다)."""
-    try:
-        from notify.kakao import send_memo
-        send_memo(f"📩 카탈로그 신청 접수\n업체: {company}\n담당자: {contact_name}\n이메일: {email}")
-    except Exception as e:
-        st.session_state["_notify_error"] = str(e)
 
 
 def valid_email(email: str) -> bool:
@@ -122,7 +109,13 @@ if submitted:
             st.error(e)
     else:
         save_lead(company.strip(), contact_name.strip(), email.strip(), phone.strip(), interests, message.strip())
-        notify_new_lead(company.strip(), contact_name.strip(), email.strip())
+        # 알림 실패 사유는 내부 로그(print)로만 남기고, 고객 화면에는 절대 노출하지 않는다.
+        ok, reason = send_lead_email(
+            company.strip(), contact_name.strip(), email.strip(),
+            phone.strip(), ", ".join(interests), message.strip(),
+        )
+        if not ok:
+            print(f"[notify_email 실패] {reason}")
         st.success("신청이 접수됐습니다! 아래에서 카탈로그를 바로 받아보세요. 담당자가 곧 이메일로 연락드리겠습니다.")
         if CATALOG_PATH.exists():
             st.download_button(
@@ -131,5 +124,3 @@ if submitted:
                 file_name=CATALOG_PATH.name,
                 use_container_width=True,
             )
-        if st.session_state.get("_notify_error"):
-            st.caption(f"(내부 알림 전송은 실패했지만 신청 정보는 정상 저장됐습니다: {st.session_state['_notify_error']})")
