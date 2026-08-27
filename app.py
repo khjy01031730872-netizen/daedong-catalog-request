@@ -24,6 +24,21 @@ CATALOG_PATH = BASE_DIR / "대동울타리_제품카탈로그.pptx"
 
 st.set_page_config(page_title="대동울타리 — 제품 카탈로그 신청", page_icon="🛡️", layout="centered")
 
+# 2026-08-27: 카탈로그 파일(대동울타리_제품카탈로그.pptx)이 아직 최종본이 아니라는 걸
+# 사장님이 뒤늦게 확인 — 실제 홈페이지 버튼은 이미 라이브라 폼 자체를 막아둔다.
+# 최종 카탈로그 파일을 받으면 이 스위치를 False로 바꾸고 재배포한다.
+MAINTENANCE_MODE = True
+
+if MAINTENANCE_MODE:
+    st.title("🛡️ 대동울타리 제품 카탈로그 신청")
+    st.caption("휀스·난간·주물휀스 전문 제조·시공 — 경기 화성시 마도면")
+    st.info(
+        "현재 카탈로그 자료를 준비 중입니다. 빠른 시일 내에 신청 접수를 시작하겠습니다.\n\n"
+        "급하신 문의는 전화(031-8055-0520) 또는 이메일(daedongfence@naver.com)로 "
+        "직접 연락 주시면 안내해 드리겠습니다."
+    )
+    st.stop()
+
 INTEREST_OPTIONS = ["메쉬휀스", "디자인휀스", "안전난간", "주물휀스", "합성목재 가림판", "특수 제작(맞춤)", "기타"]
 
 
